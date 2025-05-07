@@ -1,6 +1,6 @@
 #include "ControlTimedSharedPtr.h"
 
-using namespace std;  // You can use namespace std here in the .cpp file.
+using namespace std;  
 
 ControlTimedSharedPtr::ControlTimedSharedPtr(void* p, long deleteMeInMilliseconds)
     : ptr(p),

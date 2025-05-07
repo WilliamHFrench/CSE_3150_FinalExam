@@ -7,7 +7,7 @@ struct Node {
     int val;
     TimedSharedPtr<Node> next;
 
-    Node(int v) : val{v} {}  // Inline constructor
+    Node(int v) : val{v} {} 
 };
 
 #endif // NODE_H

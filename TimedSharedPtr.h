@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <chrono>
-#include "ControlTimedSharedPtr.h" // Assuming this is a separate class
+#include "ControlTimedSharedPtr.h" 
 
 using namespace std;
 
@@ -24,7 +24,10 @@ public:
     TimedSharedPtr& operator=(const TimedSharedPtr& other);  // Assignment operator
 
     long use_count() const noexcept;  // Returns the use count
-    T* get() const;  // Returns the raw pointer or nullptr if expired
+    T* get();  // Returns the raw pointer or nullptr if expired
+    chrono::milliseconds remainingTime(); //returns remaining milliseconds before expirey
+    void replaceItem(T* newItem); // replaces the ietm in the shared pointer
+    void resetTimer(); //resets the timer to the current time
 
     ~TimedSharedPtr();  // Destructor
 };
@@ -69,7 +72,7 @@ long TimedSharedPtr<T>::use_count() const noexcept {
 }
 
 template<typename T>
-T* TimedSharedPtr<T>::get() const {
+T* TimedSharedPtr<T>::get() {
     if (!_ptrToControl) return nullptr;
 
     auto millisecondsSinceStart = Clock::now() - _ptrToControl->TimedSharedPtrStartTime;
@@ -84,6 +87,42 @@ T* TimedSharedPtr<T>::get() const {
 
     return static_cast<T*>(_ptrToControl->ptr);
 }
+
+template<typename T>
+chrono::milliseconds TimedSharedPtr<T>::remainingTime (){
+    if (!_ptrToControl) {
+        return std::chrono::milliseconds(0);
+    }
+    auto elapsed = Clock::now() - _ptrToControl->TimedSharedPtrStartTime;
+    auto remaining = _ptrToControl->deletePtrInMs - std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
+    if (remaining.count() < 0) {
+        if (_ptrToControl->ptr) {
+            cout << "Expired — deleting ptr" << endl;
+            delete static_cast<T*>(_ptrToControl->ptr);
+            _ptrToControl->ptr = nullptr;
+        }
+        return std::chrono::milliseconds(0);
+    }
+    return remaining;
+}
+
+template<typename T>
+void TimedSharedPtr<T>::replaceItem(T* newItem) {
+    if (_ptrToControl) {
+        if (_ptrToControl->ptr) {
+            delete static_cast<T*>(_ptrToControl->ptr);
+        }
+        _ptrToControl->ptr = static_cast<void*>(newItem);
+    }
+}
+
+template<typename T>
+void TimedSharedPtr<T>::resetTimer(){
+    if (_ptrToControl) {
+        _ptrToControl->TimedSharedPtrStartTime = Clock::now();
+    }
+}
+
 
 template<typename T>
 TimedSharedPtr<T>::~TimedSharedPtr() {
